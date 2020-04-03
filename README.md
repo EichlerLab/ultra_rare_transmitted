@@ -3,14 +3,14 @@ Pipeline to generate ultra-rare transmitted callsets for genomes and exomes
 
 ## Overview: 
 This pipeline starts with left-normalized and reheadered VCFs from FreeBayes and GATK (see genome workflow for details on generating these VCFs). It will:
-	1. Merge these two variant callsets together (per family), 
-	2. Identify the parent of origin and recipient children (if any) (per family), 
-	3. Count alleles across parents by genotype (e.g. HOM REF, HET, HOM ALT) and output into a VCF (criteria detailed below) (across families/per cohort),
-	4. Extract ultra-rare variants (criteria detailed below) (per family),
-	5. Annotate variants with SNPEFF (Gene name, transcript IDs, variant effect, etc.) (per family),
-	6. Concatenate annotated ultra-rare variants (across families/per cohort),
-	7. "Filter" sites against recent repeats, gaps, centromeres, PARs, and LCRs
-	8. Extract protein-coding sites
+1. Merge these two variant callsets together (per family), 
+2. Identify the parent of origin and recipient children (if any) (per family), 
+3. Count alleles across parents by genotype (e.g. HOM REF, HET, HOM ALT) and output into a VCF (criteria detailed below) (across families/per cohort),
+4. Extract ultra-rare variants (criteria detailed below) (per family),
+5. Annotate variants with SNPEFF (Gene name, transcript IDs, variant effect, etc.) (per family),
+6. Concatenate annotated ultra-rare variants (across families/per cohort),
+7. "Filter" sites against recent repeats, gaps, centromeres, PARs, and LCRs
+8. Extract protein-coding sites
 
 ## Included scripts:
 - `inheritance_exome.snake`
