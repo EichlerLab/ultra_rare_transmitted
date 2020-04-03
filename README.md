@@ -96,7 +96,10 @@ BEDTools is used to create a file of "clean" positions. This file is used to sel
 
 Dependencies: BEDTools/2.24.0 or later, centromere and gaps, LCRs, recent repeats, PARs (these data are located here for hg38: `/net/eichler/vol27/projects/autism_inheritance/nobackups/reference/`)
 
-**NOTE:** This step does not explicity remove any sites from the input file, but rather creates a BED file that contains "clean" variant calls. This BED file is used in the next step when extracting protein-coding varaints. 
+**NOTES:** 
+This step does not explicity remove any sites from the input file, but rather creates a BED file that contains "clean" variant calls. This BED file is used in the next step when extracting protein-coding varaints. 
+
+The centromere, gap, LCR, PAR, and recent repeat files are currently for hg38 and are hardcoded into the pipeline.
 
 ### **Step 8: Extract protein-coding variants**
 This step loads the ultra-rare callset into memory (run this on lynx/ocelot/high memory node), removes low quality/problem regions, extracts protein-coding sites according to standard Eichler lab criteria (see below), and parses transmitted sites by person (e.g. a site that is transmitted will be observed three times - once for each child). This will create four additional columns: var_type, transmitted, person, carrier. The var_type column indicates whether the site is lgd, mis or syn according to the Eichler lab rule. The transmitted column indicates to which child the site was transmitted (e.g. p1, s1, p2, etc.). If the site was not transmitted you will observe a "." or NA. the carrier column will indicate which parent is the carrier - this column should match with the CARRIER column. The person column will contain the sample ID for the child carrying the allele. Sites with no carrier will have a person column value of `{FAMID}.NA`.
