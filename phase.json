@@ -1,0 +1,18 @@
+{
+  "reference": "/path/to/reference/GRCh38_full_analysis_set_plus_decoy_hla.fa",
+  "script_dir": "scripts",
+  "phase": "cohort_name",
+  "ped_dir": "/path/to/ped",
+  "fb_dir": "/path/to/freebayes/reheader/family_vcfs",
+  "gatk_dir" : "/path/to/gatk/reheader/family_vcfs",
+  "build": "GRCh38.86",
+  "snpeff": "/path/to/software/snpEff",
+  "gatk_path": "/path/to/software/GenomeAnalysisTK-3.8-0-ge9d806836",
+  "cadd": "/path/to/db/cadd_v1.4_GRCh38.vcf.gz",
+  "exac": "/path/to/db/ExAC.r0.3.nonpsych.sites_GRCh38.vcf.gz",
+  "dbsnp": "/path/to/db/dbSNP150_GRCh38p7.vcf.gz",
+  "ped": "/path/to/ped/file_name.ped",
+  "batch_size": 150,
+  "max_het_ac": 9,
+  "max_hom_ac": 0
+}

@@ -1,0 +1,204 @@
+"""
+Inheritance mapping for exomes.
+"""
+
+# Load config
+configfile: 'phase.json'
+
+reference=config["reference"]
+script_dir=config["script_dir"]
+phase=config["phase"]
+fb_dir=config["fb_dir"]
+gatk_dir=config["gatk_dir"]
+gatk=config["gatk_path"]
+build=config["build"]
+snpeff=config["snpeff"]
+cadd=config["cadd"]
+exac=config["exac"]
+dbsnp=config["dbsnp"]
+ped=config["ped"]
+batch_size=config["batch_size"]
+het_ac = config["max_het_ac"]
+hom_ac = config["max_hom_ac"]
+
+# Load modules for all shell commands
+shell.prefix(
+    """module purge; """
+    """module load modules modules-init modules-gs modules-eichler; """
+    """module load miniconda/4.5.12; """
+    """module load htslib/1.9; """
+    """module load bcftools/1.9; """
+    """module load vcflib/20170824; """
+    """module load python/2.7.11; """
+    """module load gcc/8.1.0; """
+    """module load R/3.5.1; """
+    """module load bedtools/2.24.0; """
+)
+
+# Specify defaul sge_opts parameters
+param_default = "-l mfree=4G,h_rt=8:00:00,gpfsstate=0"
+
+# Load Family IDs
+with open('family_ids.txt', 'r') as file:
+    SAMPLES = [line.rstrip() for line in file]
+
+import math
+n_batches = math.ceil(len(SAMPLES)/batch_size)
+print(n_batches)
+
+localrules: all, summarize, variant_list
+ 
+# Run all
+rule all:
+    input: [expand('inheritance/{family}.inheritance.vcf.gz', family = SAMPLES), 'results/rare/all_families_rare.genic.snpeff.txt.gz']
+
+#
+# SUMMARIZE
+#
+rule extract_genic:
+    input:
+        counts='variant_counts.vcf.gz',
+        rare="results/rare/all_families_rare.snpeff.txt.gz",
+        filtered="results/rare/all_families_rare.repeat_filtered.bed.gz"
+    output: 'results/rare/all_families_rare.genic.snpeff.txt.gz'
+    params:
+       sge_opts="-l mfree=50G,h_rt=900:00:00,gpfsstate=0"
+    shell:
+        """Rscript {script_dir}/extract_coding_rare.R {input.rare} {input.counts} {input.filtered} {output}"""
+
+rule repeat_filter:
+    input: "results/rare/all_families_rare.snpeff.txt.gz"
+    output: "results/rare/all_families_rare.repeat_filtered.bed.gz"
+    params:
+        sge_opts=param_default
+    shell:
+        """zcat {input} | """
+        """awk 'NR > 1 {{start=$2-1; print $1"\t"start"\t"$2}}' | """
+        """bedtools intersect -a stdin -b /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/ucsc_repeats_segdups_plus_recent_repeats_sort_merge.bed.gz /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/LCR-hs38-5bp-buffer.bed.gz /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/hg38_centromeres_09252018.bed.gz /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/hg38_PARs.bed -v -nonamecheck | """
+        """bgzip > {output}"""
+
+rule summarize:
+    input:
+        txt=expand('results/rare/families/snpeff/{family}.snpeff.txt.gz', family = SAMPLES)
+    output:
+        txt='results/rare/all_families_rare.snpeff.txt.gz'
+    params:
+        sge_opts="-l mfree=40G,h_rt=36:00:00,gpfsstate=0"
+    shell:
+        """zcat results/rare/families/snpeff/*.txt.gz | """
+        """grep -m 1 CHROM > results/rare/families/snpeff/header; """
+        """zcat results/rare/families/snpeff/*.txt.gz | """
+        """grep -v CHROM | """
+        """cat results/rare/families/snpeff/header - | """
+        """bgzip > {output.txt}"""
+
+#
+# Annotate with SnpEff
+#
+rule snpeff:
+    input:
+        vcf='results/rare/families/{famid}.vcf.gz'
+    output:
+        txt='results/rare/families/snpeff/{famid}.snpeff.txt.gz'
+    params:
+        sge_opts='-l h_vmem=13G,gpfsstate=0,h_rt=90:00:00 -pe serial 4'
+    shell:
+        """java -Xmx48g -XX:ParallelGCThreads=4 -jar {snpeff}/snpEff.jar -v -c {snpeff}/snpEff.config -lof {build} -formatEff -canon -strict -noStats -t {input.vcf} | """
+        """java -jar -Xmx48g -XX:ParallelGCThreads=4 {snpeff}/SnpSift.jar annotate -v -info AF -name exac_ -noId -tabix -a {exac} | """
+        """java -jar -Xmx48g -XX:ParallelGCThreads=4 {snpeff}/SnpSift.jar annotate -v -id -noInfo -tabix {dbsnp} | """
+        """java -jar -Xmx48g -XX:ParallelGCThreads=4 {snpeff}/SnpSift.jar annotate -v -info CADD_Phred -noID -tabix {cadd} -a | """
+        """perl {snpeff}/scripts/vcfEffOnePerLine.pl | """
+        """java -jar -Xmx48g -XX:ParallelGCThreads=4 {snpeff}/SnpSift.jar extractFields -s "\t" -e "." - "CHROM" "POS" "REF" "ALT" "ID" "QUAL" "FILTER" "set" "CADD_Phred" "exac_AF" "EFF[*].GENE" "EFF[*].TRID" "EFF[*].EFFECT" "EFF[*].AA" "EFF[*].AA_LEN" "DP" "AC" "FAMID" "MENDEL" "INHER" "CARRIER" "PROBAND_SEX" "SIBLING_SEX" | """
+        """bgzip > {output.txt}"""
+
+#
+# Extract rare
+#
+
+rule extract_rare:
+    input: 
+        vcf='inheritance/{famid}.inheritance.vcf.gz',
+        counts='variant_counts.vcf.gz'
+    output:
+        txt='results/rare/families/{famid}.txt',
+        vcf='results/rare/families/{famid}.vcf.gz',
+        tbi='results/rare/families/{famid}.vcf.gz.tbi'
+    params: 
+        sge_opts="-l mfree=50G,h_rt=36:00:00,gpfsstate=0"
+    shell:
+        """module purge; """
+        """module load modules modules-init modules-gs modules-eichler gcc/8.1.0 R/3.5.1 htslib/1.9; """
+        """Rscript {script_dir}/exome/extract_rare.R {ped} {input.counts} {input.vcf} {het_ac} {hom_ac}; """
+        """cat results/rare/{wildcards.famid}.header results/rare/families/{wildcards.famid}.txt | """
+        """bgzip > {output.vcf}; """
+        """tabix -p vcf {output.vcf}"""
+
+rule variant_list:
+    input: expand('snvs/{family}.combined.nomulti.vcf.gz', family = SAMPLES)
+    output: 
+        vcf='variant_counts.vcf.gz'.format(study = phase),
+        tbi='variant_counts.vcf.gz.tbi'.format(study = phase)
+    params:
+        sge_opts="-l mfree=20G,gpfsstate=0 -pe serial 20",n_batch=n_batches
+    shell:
+        """for batch in {{1..{params.n_batch}}}; do Rscript {script_dir}/exome/batch_private_list.R $batch; done; """
+        """Rscript {script_dir}/gather_private_list_batches.R; """
+        """sed 's/Description=/Description="/g' variant_counts.vcf | """
+        """sed 's/>/">/g' | """
+        """grep -v "X.CHROM" | """
+        """bgzip > variant_counts.vcf.gz; """
+        """tabix -f -p vcf {output.vcf}; """
+#
+# Map inheritance
+#
+
+rule inheritance:
+    input:
+        vcf='snvs/{famid}.combined.nomulti.vcf.gz'
+    output:
+        vcf='inheritance/{famid}.inheritance.vcf.gz',
+        tbi='inheritance/{famid}.inheritance.vcf.gz.tbi'
+    params:
+        sge_opts=param_default
+    shell:
+        """python2 {script_dir}/inheritance.py {input.vcf} {ped} {wildcards.famid} | """
+        """bgzip > {output.vcf}; """ 
+        """tabix -f -p vcf {output.vcf}"""
+
+#
+# Merge GATK and FreeBayes
+#
+        
+# INTERSECT CALLS
+rule merge:
+    input:
+        freebayes= lambda wildcards: '{dir}/{sample}.freebayes.family.norm.vcf.gz'.format(dir=fb_dir, sample=wildcards.famid),
+        gatk= 'temp/{famid}.gatk.family.vcf.gz',
+        tbi= lambda wildcards: '{fb}/{sample}.freebayes.family.norm.vcf.gz.tbi temp/{sample}.gatk.family.vcf.gz.tbi'.format(fb=fb_dir, sample=wildcards.famid).split() 
+    output:
+        vcf='snvs/{famid}.combined.nomulti.vcf.gz',
+        tbi='snvs/{famid}.combined.nomulti.vcf.gz.tbi'
+    params:
+        sge_opts="-l mfree=10G,h_rt=4:00:00,gpfsstate=0"
+    shell:
+        """java -Xmx8G -jar {gatk}/GenomeAnalysisTK.jar -T CombineVariants -R {reference} -V:FreeBayes {input.freebayes} -V:GATK {input.gatk} -genotypeMergeOptions PRIORITIZE -priority FreeBayes,GATK | """
+        """vcffilter -s -f "AC >0 " | """
+        """bgzip > {output.vcf}; """
+        """tabix -f -p vcf {output.vcf}"""
+
+# FILTER AC=0 FROM GATK CALLS
+rule filter:
+    input:
+        gatk= lambda wildcards: '{dir}/{sample}.gatk.family.vcf.gz'.format(dir=gatk_dir, sample=wildcards.famid),
+        tbi= lambda wildcards: '{gatk}/{sample}.gatk.family.vcf.gz'.format(gatk=gatk_dir, sample=wildcards.famid)
+    output:
+        vcf=temp('temp/{famid}.gatk.family.vcf.gz'),
+        tbi=temp('temp/{famid}.gatk.family.vcf.gz.tbi')
+    params:
+        sge_opts=param_default
+    shell:
+        """vcffixup {input.gatk} | """
+        """vcffilter -s -f "AC > 0" | """
+        """bgzip > {output.vcf}; """
+        """tabix -f -p vcf {output.vcf}"""
+

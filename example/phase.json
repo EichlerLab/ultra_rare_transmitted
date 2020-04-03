@@ -1,0 +1,18 @@
+{
+  "reference": "/net/eichler/vol27/projects/autism_inheritance/nobackups/reference/GRCh38_full_analysis_set_plus_decoy_hla.fa",
+  "script_dir": "/net/eichler/vol27/projects/autism_inheritance/nobackups/scripts",
+  "phase": "tasc",
+  "ped_dir": "/net/eichler/vol27/projects/autism_inheritance/nobackups/tasc/ped",
+  "fb_dir": "/net/eichler/vol27/projects/autism_inheritance/nobackups/tasc/freebayes/reheader",
+  "gatk_dir" : "/net/eichler/vol26/7200/TASC_genomes/nobackups/gatk/family_vcfs",
+  "build": "GRCh38.86",
+  "snpeff": "/net/eichler/vol27/projects/autism_inheritance/nobackups/software/snpEff",
+  "gatk_path": "/net/eichler/vol27/projects/autism_inheritance/nobackups/software/GenomeAnalysisTK-3.8-0-ge9d806836",
+  "cadd": "/net/eichler/vol27/projects/autism_inheritance/nobackups/db/cadd_v1.4_GRCh38.vcf.gz",
+  "exac": "/net/eichler/vol27/projects/autism_inheritance/nobackups/db/ExAC.r0.3.nonpsych.sites_GRCh38.vcf.gz",
+  "dbsnp": "/net/eichler/vol27/projects/autism_inheritance/nobackups/db/dbSNP150_GRCh38p7.vcf.gz",
+  "ped": "/net/eichler/vol27/projects/autism_inheritance/nobackups/tasc/ped/tasc.ped",
+  "batch_size": 150,
+  "max_het_ac": 9,
+  "max_hom_ac": 0
+}
