@@ -79,7 +79,7 @@ This is the step where the allele count cutoff is used to extracted only alleles
 Dependencies: R, tidyverse
 
 ### **Step 5: Annotate**
-This step will annotate the ultra-rare varint family VCF with gene names, variant effect, etc. using SNPEFF. It will then annotate with CADD, ExAC allele frequencies and dbSNP - these VCFs need to be provided inthe config file. The path to SNPEFF and the genome build also need to be included in the config file. This step utilizes two SNPEFF accessory functions. The first splits SNPEFF annotations into separate lines per annotation if multiple are present. The second converts the SNPEFF annotations from a VCF format to a tab-delimited text file.
+This step will annotate the ultra-rare varint family VCF with gene names, variant effect, etc. using SNPEFF. It will then annotate with CADD, ExAC allele frequencies and dbSNP - these VCFs need to be provided inthe config file. The path to SNPEFF and the genome build also need to be included in the config file. This step utilizes two SNPEFF accessory functions. The first splits SNPEFF annotations into separate lines per annotation if multiple are present. The second converts the SNPEFF annotations from a VCF format to a tab-delimited text file. **You will need to specify you genome build and version here. The json is currently set to hg38.**
 
 Dependencies: SNPEFF, java8, CADDv1.4, ExAC, dbSNP
 
