@@ -50,7 +50,7 @@ localrules: all, summarize, variant_list
  
 # Run all
 rule all:
-    input: [expand('inheritance/{family}.inheritance.vcf.gz', family = SAMPLES), 'results/rare/all_families_rare.genic.snpeff.txt.gz']
+    input: [expand('inheritance/{family}.inheritance.vcf.gz', family = SAMPLES), 'results/rare/all_families_rare.genic.snpeff.txt']
 
 #
 # SUMMARIZE
@@ -60,7 +60,7 @@ rule extract_genic:
         counts='variant_counts.vcf.gz',
         rare="results/rare/all_families_rare.snpeff.txt.gz",
         filtered="results/rare/all_families_rare.repeat_filtered.bed.gz"
-    output: 'results/rare/all_families_rare.genic.snpeff.txt.gz'
+    output: 'results/rare/all_families_rare.genic.snpeff.txt'
     params:
        sge_opts="-l mfree=50G,h_rt=900:00:00,gpfsstate=0"
     shell:
