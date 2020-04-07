@@ -35,7 +35,7 @@ Run this command within the example directory on a high memory server (e.g. lynx
 
 `snakemake -j 100 --jobname "{rulename}.{jobid}" --drmaa "-V -cwd -e ./log -o ./log {params.sge_opts} -w n -S /bin/bash" -k -w 120 --rerun-incomplete -s inheritance_genome.snake -p`
 
-**NOTE:** R will produce warning mesages and other "helpful" output. This is normal and should not impact the generation of the final output files. HOWEVER, if this example does not work and all files listed in the config exist, feel free to contact Amy Wilfert at amy.wilfert@gmail.com for help debugging.
+**NOTE:** R will produce warning mesages and other "helpful" output. This is normal and should not impact the generation of the final output files. HOWEVER, if this example does not work and all files listed in the config exist, contact Amy Wilfert at amy.wilfert@gmail.com for help debugging.
 
 ## Details:
 ### **Step 1: Merge variant callsets together**
@@ -120,4 +120,19 @@ Dependencies: R/3.5.1 or later, tidyverse
 This utility will combine variant counts data and extract ultra-rare variants from across indivdual cohorts that already have an ultra-rare variant callset.
 
 ### Example
+Run this command within the example/combine_sets directory on a high memory server (e.g. lynx, ocelot, or a qlogin with at least 300GB of memory). Do ensure you have the `DRMAA_LIBRARY_PATH` specified either in your `.bash_profile` or prior to executing the command.
+
+`snakemake -j 100 --jobname "{rulename}.{jobid}" --drmaa "-V -cwd -e ./log -o ./log {params.sge_opts} -w n -S /bin/bash" -k -w 120 --rerun-incomplete -s combine_sets.snake -p`
+
+This examples will combine two whole-genome ultra-rare variant callsets. To instead test combinining whole-exome and whole-genome data change the `config.json` to the following and run the above command.
+
+`{
+  "manifest": "manifest.txt",
+  "outfile": "sage_tasc",
+  "script_dir": "/net/eichler/vol27/projects/autism_inheritance/nobackups/scripts/",
+  "het_ac": 9,
+  "hom_ac": 0,
+  "exome_capture": "/net/eichler/vol27/projects/autism_inheritance/nobakcups/spake/phase1_3/target_coverage/spark_well_covered_regions_with_chr.bed"
+}`
+
 ### Details
