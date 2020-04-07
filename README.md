@@ -124,12 +124,12 @@ Run this command within the example/combine_sets directory on a high memory serv
 
 `snakemake -j 100 --jobname "{rulename}.{jobid}" --drmaa "-V -cwd -e ./log -o ./log {params.sge_opts} -w n -S /bin/bash" -k -w 120 --rerun-incomplete -s combine_sets.snake -p`
 
-This examples will combine two whole-genome ultra-rare variant callsets. To instead test combinining whole-exome and whole-genome data change the `config.json` to the following and run the above command.
+This example will combine two whole-genome ultra-rare variant callsets. To instead test combinining whole-exome and whole-genome data change the `config.json` to the following and run the above command.
 
 ```
 {
-  "manifest": "manifest.txt",
-  "outfile": "sage_tasc",
+  "manifest": "exome_genome_manifest.txt",
+  "outfile": "sage_spark_tasc",
   "script_dir": "/net/eichler/vol27/projects/autism_inheritance/nobackups/scripts/",
   "het_ac": 9,
   "hom_ac": 0,
