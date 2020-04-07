@@ -126,13 +126,15 @@ Run this command within the example/combine_sets directory on a high memory serv
 
 This examples will combine two whole-genome ultra-rare variant callsets. To instead test combinining whole-exome and whole-genome data change the `config.json` to the following and run the above command.
 
-`{
+```
+{
   "manifest": "manifest.txt",
   "outfile": "sage_tasc",
   "script_dir": "/net/eichler/vol27/projects/autism_inheritance/nobackups/scripts/",
   "het_ac": 9,
   "hom_ac": 0,
   "exome_capture": "/net/eichler/vol27/projects/autism_inheritance/nobakcups/spake/phase1_3/target_coverage/spark_well_covered_regions_with_chr.bed"
-}`
+}
+```
 
 ### Details
