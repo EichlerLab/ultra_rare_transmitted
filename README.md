@@ -112,5 +112,10 @@ This step loads the ultra-rare callset into memory (run this on lynx/ocelot/high
 
 Dependencies: R/3.5.1 or later, tidyverse
 
-Additional utilities:
-Combining ultra-rare callsets across cohorts
+## Additional utilities
+## Combining ultra-rare callsets across cohorts
+### Overview
+This utility will combine variant counts data and extract ultra-rare variants from across indivdual cohorts that already have an ultra-rare variant callset.
+
+### Example
+### Details
