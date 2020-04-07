@@ -33,7 +33,7 @@ This pipeline has been fully tested on centOS6. To run on centOS7 the versions o
 ## Example
 Run this command within the example directory on a high memory server (e.g. lynx, ocelot, or a qlogin with at least 300GB of memory). Do ensure you have the `DRMAA_LIBRARY_PATH` specified either in your `.bash_profile` or prior to executing the command.
 
-`snakemake -j 100 --jobname "{rulename}.{jobid}" --drmaa "-V -cwd -e ./log -o ./log {params.sge_opts} -w n -S /bin/bash" -k -w 120 --rerun-incomplete -s Snakefile -p`
+`snakemake -j 100 --jobname "{rulename}.{jobid}" --drmaa "-V -cwd -e ./log -o ./log {params.sge_opts} -w n -S /bin/bash" -k -w 120 --rerun-incomplete -s inheritance_genome.snake -p`
 
 **NOTE:** R will produce warning mesages and other "helpful" output. This is normal and should not impact the generation of the final output files. HOWEVER, if this example does not work and all files listed in the config exist, feel free to contact Amy Wilfert at amy.wilfert@gmail.com for help debugging.
 
