@@ -11,8 +11,8 @@ args = commandArgs(trailingOnly = T)
 ped_file = args[1]
 counts_file = args[2]
 file = args[3]
-het_ac = args[4]
-hom_ac = args[5]
+het_ac = as.numeric(args[4])
+hom_ac = as.numeric(args[5])
 
 ## define functions ##
 # extract and format rare variants from a family
