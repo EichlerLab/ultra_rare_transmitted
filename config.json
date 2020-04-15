@@ -1,0 +1,8 @@
+{
+  "manifest": "manifest.txt",
+  "outfile": "sage_tasc",
+  "script_dir": "/net/eichler/vol27/projects/autism_inheritance/nobackups/scripts/",
+  "het_ac": 9,
+  "hom_ac": 0,
+  "exome_capture": ""
+}

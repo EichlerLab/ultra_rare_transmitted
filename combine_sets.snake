@@ -1,0 +1,159 @@
+"""
+Combine cohorts.
+"""
+
+# Load config
+configfile: 'config.json'
+
+manifest=config["manifest"]
+outfile=config["outfile"]
+script_dir=config["script_dir"]
+het_ac=config["het_ac"]
+hom_ac=config["hom_ac"]
+exome_capture=config["exome_capture"]
+
+# Load modules for all shell commands
+shell.prefix(
+    """module purge; """
+    """module load modules modules-init modules-gs modules-eichler; """
+    """module load htslib/1.9; """
+    """module load bedtools/2.24.0; """
+    """module load gcc/8.1.0; """
+    """module load R/3.5.1; """
+)
+
+# Specify defaul sge_opts parameters
+param_default = "-l mfree=4G,h_rt=8:00:00,gpfsstate=0"
+
+# Load manifest
+COHORTS={}
+PED=[]
+with open(manifest, 'r') as file:
+    for line in file:
+        info = line.rstrip().split('\t')
+        COHORTS[info[0]] = info[1]
+        PED.append(info[2])
+
+localrules: all, count_variants, combine_variants, combine_ped
+
+rule all:
+    input: [expand('results/rare/{study}_rare.snpeff.txt.gz', study = COHORTS.keys()), 'results/rare/{out}_rare.snpeff.txt.gz'.format(out=outfile), '{out}.ped'.format(out=outfile), 'family_ids.txt', 'results/rare/{out}_rare.genic.snpeff.txt'.format(out=outfile)]
+
+
+if exome_capture != "":
+    #
+    # EXTRACT CODING VARIANTS
+    #
+    rule extract_genic:
+        input:
+            txt='results/rare/{out}_rare.snpeff.txt.gz'.format(out=outfile),
+            vcf='variant_counts.vcf.gz',
+            bed='results/rare/{out}_rare.capture_repeat_filtered.bed.gz'.format(out=outfile)
+        output: 'results/rare/{out}_rare.genic.snpeff.txt'.format(out=outfile)
+        params:
+           sge_opts=param_default
+        shell:
+            """Rscript {script_dir}/extract_coding_rare.R {input.txt} {input.vcf} {input.bed} {output}"""
+    
+    #
+    # FILTER LCRs, RECENT REPEATS, GAPS, CENTROMERES, PARS, AND POORLY COVERED IN EXOME
+    #
+    rule filter:
+        input: 'results/rare/{out}_rare.snpeff.txt.gz'.format(out=outfile)
+        output: 'results/rare/{out}_rare.capture_repeat_filtered.bed.gz'.format(out=outfile)
+        params:
+            sge_opts=param_default
+        shell:
+            """zcat {input} | """
+            """awk 'NR > 1 {{start=$2-1; print $1"\t"start"\t"$2}}' | """
+            """bedtools intersect -a stdin -b /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/ucsc_repeats_segdups_plus_recent_repeats_sort_merge.bed.gz /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/LCR-hs38-5bp-buffer.bed.gz /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/hg38_centromeres_09252018.bed.gz /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/hg38_PARs.bed -v -nonamecheck | """
+            """bedtools interset -a stdin -b {exome_capture} | """
+            """bgzip > {output}"""
+else: 
+    #
+    # EXTRACT CODING VARIANTS
+    #
+    rule extract_genic:
+        input: 
+            txt='results/rare/{out}_rare.snpeff.txt.gz'.format(out=outfile),
+            vcf='variant_counts.vcf.gz',
+            bed='results/rare/{out}_rare.repeat_filtered.bed.gz'.format(out=outfile)
+        output: 'results/rare/{out}_rare.genic.snpeff.txt'.format(out=outfile)
+        params:
+            sge_opts=param_default
+        shell:
+            """Rscript {script_dir}/extract_coding_rare.R {input.txt} {input.vcf} {input.bed} {output}"""
+    
+    #
+    # FILTER LCRs, RECENT REPEATS, GAPS, CENTROMERES AND PARS
+    #
+    rule filter:
+        input: 'results/rare/{out}_rare.snpeff.txt.gz'.format(out=outfile)
+        output: 'results/rare/{out}_rare.repeat_filtered.bed.gz'.format(out=outfile)
+        params:
+            sge_opts=param_default
+        shell:
+            """zcat {input} | """
+            """awk 'NR > 1 {{start=$2-1; print $1"\t"start"\t"$2}}' | """
+            """bedtools intersect -a stdin -b /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/ucsc_repeats_segdups_plus_recent_repeats_sort_merge.bed.gz /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/LCR-hs38-5bp-buffer.bed.gz /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/hg38_centromeres_09252018.bed.gz /net/eichler/vol27/projects/autism_inheritance/nobackups/reference/hg38_PARs.bed -v -nonamecheck | """
+            """bgzip > {output}"""
+
+
+#
+# COMBINE ACROSS COHORTS
+#
+rule combine_ped:
+    input:
+        ped=PED,
+    output:
+        ped='{out}.ped'.format(out=outfile),
+    params:
+        sge_opts=param_default
+    shell:
+        """cat {input.ped} > {output.ped}; """
+
+rule combine_variants:
+    input:
+        txt=expand('results/rare/{study}_rare.snpeff.txt.gz', study = COHORTS.keys())
+    output:
+        txt='results/rare/{out}_rare.snpeff.txt.gz'.format(out=outfile)
+    params:
+        sge_opts="-l mfree=40G,h_rt=36:00:00,gpfsstate=0"
+    shell:
+        """zcat {input.txt}[0] | """
+        """grep -m 1 CHROM > results/rare/header; """
+        """zcat {input.txt} | """
+        """grep -v CHROM | """
+        """cat results/rare/header - | """
+        """bgzip > {output.txt}; """
+
+#
+# EXTRACT RARE (BY COHORT)
+#
+rule extract_rare:
+    input: 
+        txt=lambda wildcards: "{path}results/rare/all_families_rare.snpeff.txt.gz".format(path=COHORTS[wildcards.cohort]),
+        vcf='variant_counts.vcf.gz'
+    output:
+        txt='results/rare/{cohort}_rare.snpeff.txt.gz'
+    params: 
+        sge_opts="-l mfree=50G,h_rt=36:00:00,gpfsstate=0"
+    shell:
+        """Rscript {script_dir}/combine_sets_new.R {manifest} {wildcards.cohort} {input.vcf} {het_ac} {hom_ac}; """
+        """bgzip results/rare/{wildcards.cohort}_rare.snpeff.txt"""
+
+#
+# COUNT VARIANTS ACROSS COHORTS
+#
+rule count_variants:
+    input:
+        txt=expand('{path}variant_counts.vcf.gz', path=list(COHORTS.values()))
+    output:
+       vcf='variant_counts.vcf.gz',
+       txt='family_ids.txt'
+    params:
+        sge_opts=param_default
+    shell:
+        """Rscript {script_dir}/combine_counts.R {manifest}; """
+        """bgzip variant_counts.vcf; """
+        """tabix -p vcf variant_counts.vcf.gz"""
